@@ -16,4 +16,4 @@ groq>=0.4.0
 pytest>=7.4.0
 httpx>=0.25.0
 
-https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
+https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1-py3-none-any.whl
