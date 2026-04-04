@@ -1,0 +1,16 @@
+{
+  "status": "success",
+  "fileName": "test_incident.docx",
+  "summary": "A large-scale data breach has exposed sensitive customer information from multiple financial institutions that rely on shared cloud infrastructure and digital transaction systems, with unauthorized access obtained through a vulnerability in third-party authentication software. The breach, which affected regional banks and international payment service providers, has led to suspicious account notifications and fraudulent transaction alerts, prompting temporary restrictions on online banking services. Regulatory authorities have launched investigations to determine compliance with data protection and cybersecurity standards, while experts recommend implementing stronger encryption systems and improving monitoring systems to prevent similar incidents. The breach highlights weaknesses in digital security practices within the financial industry and underscores the need for improved security measures to protect consumer data.",
+  "entities": {
+    "names": [],
+    "dates": [],
+    "organizations": [
+      "Cybersecurity Incident Report",
+      "Major Data Breach Affects Financial Institutions"
+    ],
+    "locations": [],
+    "amounts": []
+  },
+  "sentiment": "Negative"
+}

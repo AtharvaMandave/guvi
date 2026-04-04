@@ -1,0 +1,18 @@
+Creating sample DOCX document...
+Processing document with NLP Pipeline...
+
+================== API RESPONSE ==================
+{
+  "status": "success",
+  "fileName": "Cyber_Analysis.docx",
+  "summary": "A major cybersecurity incident has affected several financial institutions, exposing sensitive customer information due to a vulnerability in third-party authentication software used by banks and payment service providers. The breach, which targeted shared cloud infrastructure and digital transaction systems, resulted in the extraction of customer records, including account identifiers and partially encrypted personal data. Regulatory authorities have launched investigations to determine compliance with data protection standards, and experts recommend implementing stronger encryption, security audits, and real-time monitoring to prevent similar incidents. The attack highlights weaknesses in digital security practices within the financial industry, posing a growing risk to financial systems and customer data worldwide.",
+  "entities": {
+    "names": [],
+    "dates": [],
+    "organizations": [],
+    "locations": [],
+    "amounts": []
+  },
+  "sentiment": "Negative"
+}
+==================================================

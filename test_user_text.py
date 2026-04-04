@@ -8,6 +8,8 @@ from dotenv import load_dotenv
 load_dotenv(".env")
 
 api_key = os.getenv("API_KEY")
+if not api_key:
+    api_key = "your-secret-api-key-here"
 
 from fastapi.testclient import TestClient
 from app.main import app
@@ -75,7 +77,7 @@ growth, and improved quality of life in many areas of society."""
             "/document/analyze",
             headers={"x-api-key": api_key},
             json={
-                "fileName": "AI_Analysis.docx",
+                "fileName": "Cyber_Analysis.docx",
                 "fileType": "docx",
                 "fileBase64": b64_content
             }

@@ -16,7 +16,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 
 from app.auth import verify_api_key
 from app.config import get_settings
@@ -75,7 +75,11 @@ app.add_middleware(
 
 @app.get("/", tags=["Health"])
 async def root():
-    """Basic health check."""
+    """Serve the Web UI for Document Analysis."""
+    import os
+    # Serve index.html if it exists, otherwise fallback to health check
+    if os.path.exists("index.html"):
+        return FileResponse("index.html")
     return {"status": "alive", "service": "Document Analysis API", "version": "1.0.0"}
 
 
@@ -96,6 +100,16 @@ async def health():
 # ── Main analysis endpoint ───────────────────────────────────────────────────
 
 
+@app.post(
+    "/api/document-analyze",
+    response_model=DocumentResponse,
+    responses={
+        401: {"model": ErrorResponse, "description": "Invalid or missing API key"},
+        400: {"model": ErrorResponse, "description": "Bad request"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+    tags=["Analysis"],
+)
 @app.post(
     "/document/analyze",
     response_model=DocumentResponse,

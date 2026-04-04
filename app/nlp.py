@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import spacy
+
 from groq import Groq
 
 from app.config import get_settings
@@ -24,22 +24,9 @@ logger = logging.getLogger(__name__)
 
 # ── Lazy-loaded singletons ───────────────────────────────────────────────────
 
-_nlp_spacy: spacy.Language | None = None
+
 _groq_client: Groq | None = None
 
-
-def _get_spacy() -> spacy.Language:
-    """Load spaCy model once (with only NER enabled for speed)."""
-    global _nlp_spacy
-    if _nlp_spacy is None:
-        settings = get_settings()
-        logger.info("Loading spaCy model: %s", settings.SPACY_MODEL)
-        _nlp_spacy = spacy.load(
-            settings.SPACY_MODEL,
-            disable=["parser", "lemmatizer"],  # We only need NER
-        )
-        logger.info("spaCy model loaded successfully")
-    return _nlp_spacy
 
 
 def _get_groq() -> Groq:
@@ -105,24 +92,16 @@ def generate_summary(text: str) -> str:
         return text[:500].strip() + "..."
 
 
-# ── Named Entity Recognition (spaCy) ────────────────────────────────────────
+# ── Named Entity Recognition (Groq) ────────────────────────────────────────
 
-_ENTITY_MAP: dict[str, str] = {
-    "PERSON": "names",
-    "DATE": "dates",
-    "ORG": "organizations",
-    "GPE": "locations",
-    "LOC": "locations",
-    "MONEY": "amounts",
-}
-
+import json
 
 def extract_entities(text: str) -> dict[str, list[str]]:
     """
-    Extract named entities from text using spaCy.
+    Extract named entities from text using Groq to explicitly filter out headings/titles.
     Returns dict with keys: names, dates, organizations, locations, amounts.
     """
-    result: dict[str, list[str]] = {
+    default_result: dict[str, list[str]] = {
         "names": [],
         "dates": [],
         "organizations": [],
@@ -130,38 +109,64 @@ def extract_entities(text: str) -> dict[str, list[str]]:
         "amounts": [],
     }
 
-    if not text.strip():
+    if len(text.strip()) < 10:
+        return default_result
+
+    settings = get_settings()
+    client = _get_groq()
+
+    # Truncate text to stay within token limits
+    max_chars = 12000
+    truncated = text[:max_chars] if len(text) > max_chars else text
+
+    system_prompt = (
+        "You are an expert Named Entity Recognition system.\n"
+        "Extract the following entities from the text:\n"
+        "- names: Specific human names ONLY. Do NOT extract job titles, roles, or software/tools (e.g. ignore 'Graphic Designer', 'Adobe').\n"
+        "- dates: Specific dates, years, or time periods (e.g. 'June 2020 - Present', '2017').\n"
+        "- organizations: Real-world identifiable companies, universities, brands, or agencies. Do NOT extract section headings (e.g. 'Skills', 'Interests'), job titles, or software (e.g. 'Figma') as organizations.\n"
+        "- locations: Physical cities, states, or countries.\n"
+        "- amounts: Monetary amounts, percentages (e.g. '30%', '25%'), or specific numerical business metrics.\n"
+        "CRITICAL RULES:\n"
+        "1. Do NOT extract section titles, headings, or descriptive phrases as entities.\n"
+        "2. Ignore OCR artifacts or random text blocks.\n"
+        "3. You must respond with ONLY raw, valid JSON containing EXACTLY the keys: "
+        '["names", "dates", "organizations", "locations", "amounts"]. Do not use Markdown formatting or text.'
+    )
+
+    try:
+        completion = client.chat.completions.create(
+            model=settings.GROQ_MODEL,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": truncated},
+            ],
+            temperature=0.1,
+            response_format={"type": "json_object"},
+        )
+        
+        raw_response = completion.choices[0].message.content.strip()
+        parsed = json.loads(raw_response)
+        
+        # Ensure all keys exist and are lists
+        result = {}
+        for key in default_result:
+            val = parsed.get(key, [])
+            if not isinstance(val, list):
+                val = [val] if val else []
+            # Deduplicate items
+            result[key] = list(dict.fromkeys(str(v).strip() for v in val if v))
+            
+        logger.info(
+            "Entities (Groq) — names=%d, dates=%d, orgs=%d, locs=%d, amounts=%d",
+            len(result["names"]), len(result["dates"]), len(result["organizations"]),
+            len(result["locations"]), len(result["amounts"])
+        )
         return result
 
-    nlp = _get_spacy()
-
-    # spaCy has a max length; chunk if needed
-    max_length = nlp.max_length
-    chunks = [text[i : i + max_length] for i in range(0, len(text), max_length)]
-
-    seen: set[str] = set()
-
-    for chunk in chunks:
-        doc = nlp(chunk)
-        for ent in doc.ents:
-            category = _ENTITY_MAP.get(ent.label_)
-            if category is None:
-                continue
-            # Normalize whitespace and skip duplicates
-            entity_text = " ".join(ent.text.split())
-            if entity_text and entity_text not in seen:
-                result[category].append(entity_text)
-                seen.add(entity_text)
-
-    logger.info(
-        "Entities extracted — names=%d, dates=%d, orgs=%d, locs=%d, amounts=%d",
-        len(result["names"]),
-        len(result["dates"]),
-        len(result["organizations"]),
-        len(result["locations"]),
-        len(result["amounts"]),
-    )
-    return result
+    except Exception as exc:
+        logger.error("Groq NER failed: %s", exc)
+        return default_result
 
 
 # ── Sentiment Analysis (Groq) ───────────────────────────────────────────────
@@ -227,6 +232,6 @@ def analyze_sentiment(text: str) -> str:
 
 
 def preload_models() -> None:
-    """Pre-load spaCy model at application startup."""
-    _get_spacy()
-    logger.info("NLP models pre-loaded")
+    """Pre-resolve Groq client at application startup."""
+    _get_groq()
+    logger.info("Groq client pre-loaded")
