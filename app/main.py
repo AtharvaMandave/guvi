@@ -181,7 +181,7 @@ async def analyze_document(
 
         elapsed = time.perf_counter() - t0
         logger.info(
-            "✅ %s processed in %.1f s  (sentiment=%s, entities=%d)",
+            "%s processed in %.1f s  (sentiment=%s, entities=%d)",
             file_name,
             elapsed,
             sentiment,

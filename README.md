@@ -41,10 +41,9 @@ Explain your Data Extraction strategy:
 - **How we extract summary, entities and analyze sentiment:** Instead of running heavy local NLP dependencies that block asynchronous routes, we serialize the extracted text directly to Groq's high-speed cloud inference engine using structured, constrained JSON-mode prompting. This grants us absolute control over Entity recognition (strictly filtering out roles/headings), provides world-class Abstractive Summarization, and effortlessly classifies Sentiment logic, guaranteeing compliance with scale limitations and flawless, untempered responses.
 
 ---
-# guvi
 
-# AI Used :
-
-Claude Sonnet 4.5
-Claude Opus 4.5
-Gemini 3.1 Pro
+## AI Tools Used
+In compliance with the hackathon documentation requirements, the following AI tools were utilized during the strategy and implementation of this project:
+- **Claude 3.5 Sonnet / Opus**: Assisted in architectural planning, structuring FastAPI asynchronous workflows, and building the Glassmorphism frontend UI.
+- **Gemini 1.5 Pro**: Assisted in formulating, testing, and calibrating the rigorous JSON-constrained prompts used for Named Entity Recognition logic.
+- **Groq API (Llama 3.3 70B Versatile)**: The active production model natively integrated into the REST API. Processes all real-time summarization, entity mapping, and sentiment classification tasks.
